@@ -1,0 +1,74 @@
+name: Build
+on: 
+  workflow_dispatch:
+  push:
+    paths: 
+      - .config
+      - files/**
+      - .github/workflows/build.yml
+jobs:
+  build: 
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 2048
+          temp-reserve-mb: 1
+          swap-size-mb: 1
+          remove-dotnet: true
+          remove-android: true
+          remove-haskell: true
+          remove-codeql: true
+          remove-docker-images: true
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Preparation
+        run: | 
+          sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+          git clone -b master https://github.com/coolsnowwolf/lede.git build
+          # cp -r files build
+      - name: OpenClash
+        run: | 
+          mkdir -p build/files/etc/openclash/core/
+          wget https://raw.githubusercontent.com/vernesong/OpenClash/core/master/dev/clash-linux-arm64.tar.gz
+          tar -zxf clash-linux-arm64.tar.gz && rm -f clash-linux-arm64.tar.gz
+          chmod 777 clash
+          mv clash build/files/etc/openclash/core/clash
+          wget https://raw.githubusercontent.com/vernesong/OpenClash/core/master/meta/clash-linux-arm64.tar.gz
+          tar -zxf clash-linux-arm64.tar.gz && rm -f clash-linux-arm64.tar.gz
+          chmod 777 clash
+          mv clash build/files/etc/openclash/core/clash_meta
+          wget https://raw.githubusercontent.com/vernesong/OpenClash/core/master/premium/clash-linux-arm64-2023.08.17-13-gdcc8d87.gz 
+          gunzip clash-linux-arm64-2023.08.17-13-gdcc8d87.gz
+          chmod 777 clash*
+          mv clash* build/files/etc/openclash/core/clash_tun
+          git clone -b master https://github.com/vernesong/OpenClash.git openclash
+          mv openclash/luci-app-openclash build/package/
+          cd build/package/luci-app-openclash/tools/po2lmo
+          make && sudo make install
+      - name: Compile
+        run: | 
+          mkdir output
+          cd build
+          ./scripts/feeds update -a 
+          ./scripts/feeds install -a
+          # Argon theme
+          rm -rf package/feeds/luci/luci-theme-argon
+          git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git package/feeds/luci/luci-theme-argon
+          rm -rf package/feeds/luci/luci-app-argon-config
+          git clone -b 18.06 https://github.com/jerrykuku/luci-app-argon-config.git package/feeds/luci/luci-app-argon-config
+          cp ../.config .
+          echo "CONFIG_PACKAGE_luci-app-openclash=y" >> .config
+          make defconfig
+          make download -j$(nproc)
+          make -j$(nproc) || make -j1 V=s
+          rm -rf ./bin/targets/*/*/packages
+          cp bin/targets/*/*/* ../output
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenWrt
+          path: output
+
+
