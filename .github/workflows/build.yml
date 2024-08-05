@@ -25,11 +25,12 @@ jobs:
         uses: actions/checkout@v4
       - name: Preparation
         run: | 
-          sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+          sudo apt install $(cat dependency) -y
           git clone -b master https://github.com/coolsnowwolf/lede.git build
-          # cp -r files build
+          cp -r files build
       - name: OpenClash
         run: | 
+          # Download core
           mkdir -p build/files/etc/openclash/core/
           wget https://raw.githubusercontent.com/vernesong/OpenClash/core/master/dev/clash-linux-arm64.tar.gz
           tar -zxf clash-linux-arm64.tar.gz && rm -f clash-linux-arm64.tar.gz
@@ -43,13 +44,13 @@ jobs:
           gunzip clash-linux-arm64-2023.08.17-13-gdcc8d87.gz
           chmod 777 clash*
           mv clash* build/files/etc/openclash/core/clash_tun
+          # Add package
           git clone -b master https://github.com/vernesong/OpenClash.git openclash
           mv openclash/luci-app-openclash build/package/
           cd build/package/luci-app-openclash/tools/po2lmo
           make && sudo make install
-      - name: Compile
+      - name: Feeds
         run: | 
-          mkdir output
           cd build
           ./scripts/feeds update -a 
           ./scripts/feeds install -a
@@ -58,8 +59,20 @@ jobs:
           git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git package/feeds/luci/luci-theme-argon
           rm -rf package/feeds/luci/luci-app-argon-config
           git clone -b 18.06 https://github.com/jerrykuku/luci-app-argon-config.git package/feeds/luci/luci-app-argon-config
+          # Alist
+          rm -rf feeds/packages/lang/golang
+          git clone https://github.com/sbwml/packages_lang_golang -b 22.x feeds/packages/lang/golang
+          git clone https://github.com/sbwml/luci-app-alist package/alist
+          # Power off devices
+          git clone https://github.com/esirplayground/luci-app-poweroff.git package/luci-app-poweroff
+      - name: Compile
+        run: | 
+          mkdir output
+          cd build
           cp ../.config .
           echo "CONFIG_PACKAGE_luci-app-openclash=y" >> .config
+          echo "CONFIG_PACKAGE_luci-app-poweroff=y" >> .config
+          echo "CONFIG_PACKAGE_luci-app-alist=y" >> .config
           make defconfig
           make download -j$(nproc)
           make -j$(nproc) || make -j1 V=s
