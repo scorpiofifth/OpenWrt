@@ -1,0 +1,42 @@
+
+config interface 'loopback'
+	option ifname 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config globals 'globals'
+	option packet_steering '1'
+	option ula_prefix 'fd5b:bde1:8326::/48'
+
+config interface 'lan'
+	option type 'bridge'
+	option proto 'static'
+	option netmask '255.255.255.0'
+	option ifname 'eth1 eth2 eth3'
+	option ipaddr '192.168.100.1'
+	option ip6assign '60'
+
+config device 'lan_eth0_dev'
+	option name 'eth0'
+	option macaddr 'f2:12:4a:e0:ca:9b'
+
+config device 'wan_eth1_dev'
+	option name 'eth1'
+	option macaddr 'f2:12:4a:e0:ca:9a'
+
+config device 'lan_eth2_dev'
+	option name 'eth2'
+	option macaddr 'f2:12:4a:e0:ca:9b'
+
+config device 'lan_eth3_dev'
+	option name 'eth3'
+	option macaddr 'f2:12:4a:e0:ca:9b'
+
+config interface 'wan'
+	option proto 'dhcp'
+	option ifname 'eth0'
+
+config interface 'wan6'
+	option proto 'dhcpv6'
+	option ifname 'eth0'

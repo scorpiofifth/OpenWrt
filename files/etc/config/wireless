@@ -1,0 +1,19 @@
+
+config wifi-device 'radio0'
+	option type 'mac80211'
+	option path '3c0000000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0'
+	option htmode 'HE80'
+	option band '2g'
+	option channel 'auto'
+	option country 'CN'
+	option legacy_rates '1'
+	option mu_beamformer '0'
+
+config wifi-iface 'default_radio0'
+	option device 'radio0'
+	option mode 'ap'
+	option ssid 'OpenWrt'
+	option network 'lan'
+	option encryption 'psk-mixed'
+	option key '12345678'
+
