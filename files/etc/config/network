@@ -7,7 +7,6 @@ config interface 'loopback'
 
 config globals 'globals'
 	option packet_steering '1'
-	option ula_prefix 'fd5b:bde1:8326::/48'
 
 config interface 'lan'
 	option type 'bridge'
@@ -15,7 +14,6 @@ config interface 'lan'
 	option netmask '255.255.255.0'
 	option ifname 'eth1 eth2 eth3'
 	option ipaddr '192.168.100.1'
-	option ip6assign '60'
 
 config device 'lan_eth0_dev'
 	option name 'eth0'
@@ -37,6 +35,5 @@ config interface 'wan'
 	option proto 'dhcp'
 	option ifname 'eth0'
 
-config interface 'wan6'
-	option proto 'dhcpv6'
-	option ifname 'eth0'
+
+
